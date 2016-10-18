@@ -1,8 +1,11 @@
 {
   "host": [
-    "qq.com"
+    "pediy.com"
   ],
   "ip": [
-    "127.0.0.1"
-  ]
+
+  ],
+  "fishing": {
+    "www.fudan.edu.cn": "www.hit.edu.cn"
+  }
 }

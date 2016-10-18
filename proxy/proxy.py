@@ -10,7 +10,7 @@ class Proxy(object):
     """
     支持http协议的代理服务 （暂不支持https）
     """
-    BUFFER_SIZE = 4096
+    BUFFER_SIZE = 2048
     HTTP_METHOD = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']
     HTTPS_METHOD = ['CONNECT']
 
@@ -52,20 +52,21 @@ class Proxy(object):
                 addr_info = socket.getaddrinfo(self.host, self.port)[0]
             except socket.gaierror, e:
                 print 'This site have error!!!!'
-                print 'The host is' + self.host
-                print 'The port is' + self.port
-                print 'The url is' + self.url
-                print 'The address information is' + addr_info
+                print 'The host is ' + self.host
+                print 'The port is ' + str(self.port)
+                print 'The url is ' + self.url
+                print 'The address information is ' + addr_info
                 sys.exit(1)
             else:
                 self.target = socket.socket(addr_info[0], addr_info[1])
                 self.target.connect(addr_info[4])
-                self.target.send(self.request)
+                self.target.send(request)
                 self.return_data()
 
     def parse_url_http(self):
         parse_url = urlparse(self.url)
         self.host = parse_url.netloc
+        self.path = parse_url.path
         self.scheme = parse_url.scheme
 
         if ':' in self.host:
@@ -74,27 +75,32 @@ class Proxy(object):
         else:
             self.port = 80
 
-            # print self.method, self.url
-            print self.host, self.client_ip
+            print self.method, self.url
+            # print self.host, self.client_ip
 
     def https_request(self):
         pass
 
     def return_data(self):
-        inputs = [self.client, self.target]
-        while True:
-            readable, writeable, errs=select.select(inputs, [], inputs, 3)
-            if errs:
-                break
-            for socket in readable:
-                data=socket.recv(self.BUFFER_SIZE)
-                if data:
-                    if socket is self.client:
-                        self.target.send(data)
-                    elif socket is self.target:
-                        self.client.send(data)
-                else:
+        inputs = [self.target, self.client]
+
+        with open('cache/' + self.url.replace('/', '%')[:100], 'w') as f:
+
+            while True:
+                readable, writeable, errs = select.select(inputs, [], inputs, 3)
+                if errs:
                     break
+                for socket in readable:
+                    data = socket.recv(self.BUFFER_SIZE)
+                    if data:
+                        if socket is self.target:
+                            self.client.send(data)
+                            f.write(data)
+                        elif socket is self.client:
+                            self.target.send(data)
+                    else:
+                        break
+
         self.client.close()
         self.target.close()
 
@@ -112,8 +118,23 @@ class Proxy(object):
                     print 'Filter host.'
                     return True
 
-        return False
+            for fish in filter_json['fishing']:
+                """
+                钓鱼网站（有时候刷新的时候出现问题）
+                """
+                if self.host == fish:
+                    # print 'The url ' + self.url,
 
-class Client(object):
-    pass
+                    last_host = self.host
+                    self.host = filter_json['fishing'][fish]
+
+                    last_url = self.url
+                    self.url = self.url.replace(fish, filter_json['fishing'][fish])
+
+                    self.request = self.request.replace(last_host, self.host)
+                    self.request = self.request.replace(last_url, self.url)
+
+                    # print 'is redirect to ' + self.url
+
+        return False
 
