@@ -92,3 +92,6 @@ ENV/
 
 # Pycharm config
 .idea
+
+# Myconfig
+proxy/cache
