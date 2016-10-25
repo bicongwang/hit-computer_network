@@ -3,6 +3,7 @@ import sys
 import json
 import socket
 import select
+from cache import Cache
 from urlparse import urlparse
 
 
@@ -82,6 +83,12 @@ class Proxy(object):
         pass
 
     def return_data(self):
+
+        cache = Cache(url=self.url)
+
+        if cache.is_cache_exist():
+            print 'Cache Successful!!!'
+
         inputs = [self.target_sock, self.client_sock]
 
         fish_data = self.fish()
@@ -97,12 +104,14 @@ class Proxy(object):
                 if errors:
                     break
 
+                last_url = ''
                 # 建立过tcp连接后则直接交换客户端和目标服务器的数据
                 for socket in readable:
                     data = socket.recv(self.BUFFER_SIZE)
                     if data:
                         if socket is self.target_sock:
                             self.client_sock.send(data)
+                            cache.update_cache(data)
                         elif socket is self.client_sock:
                             self.target_sock.send(data)
                     else:

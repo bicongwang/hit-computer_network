@@ -7,6 +7,11 @@ from proxy import Proxy
 PORT = 5000
 THREAD = 5
 
+def check_exist_cache_dir():
+    # 创建缓存目录
+    if not os.path.exists('./cache'):
+        os.mkdir('./cache')
+
 if __name__ == '__main__':
 
     # 设置网络连接为ipv4， 传输层协议为tcp
@@ -18,9 +23,7 @@ if __name__ == '__main__':
     # 控制队列中可等待的最大链接
     s.listen(THREAD)
 
-    # 创建缓存目录
-    if not os.path.exists('./cache'):
-        os.mkdir('./cache')
+    check_exist_cache_dir()
 
     while 1:
         # print 'Create new thread.\n'
