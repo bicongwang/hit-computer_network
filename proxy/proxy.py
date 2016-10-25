@@ -97,7 +97,7 @@ class Proxy(object):
             self.client_sock.send(fish_data)
         else:
             while True:
-                # 监控可读的socket对象
+                # 监控可读的socket对象, 利用select实现非阻塞读取
                 readable, writeable, errors = select.select(inputs, [], inputs, 3)
 
                 # 存在错误则直接退出
