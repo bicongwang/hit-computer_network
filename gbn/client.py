@@ -19,4 +19,9 @@ def new_client_socket(client_port, protocol):
 
 
 if __name__ == '__main__':
-    new_client_socket(CLIENT_PORT, Gbn)
+
+    # 接收方开启多线程
+    thread.start_new_thread(server.new_server_socket, (SERVER_PORT_EXTRA, CLIENT_PORT_EXTRA, 'data/client_push.txt', Gbn))
+
+    new_client_socket(CLIENT_PORT, Sr)
+

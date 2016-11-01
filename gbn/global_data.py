@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import sys
 import select
 from random import random
 
@@ -25,18 +26,11 @@ MAX_TIME = 3
 
 
 class Data(object):
-    # 封装传输的数据包
-    seq = 0
 
-    def __init__(self, msg, seq=0, state=False):
+    def __init__(self, msg, seq=0, state=0):
         self.msg = msg
         self.state = state
-
-        if seq:
-            self.seq = seq
-        else:
-            self.seq = str(Data.seq)
-        Data.seq = (Data.seq + 1) % SEQ_LENGTH
+        self.seq = str(seq % SEQ_LENGTH)
 
     def __str__(self):
         return self.seq + ' ' + self.msg
@@ -49,8 +43,9 @@ class Gbn(object):
 
     def push_data(self, path, port):
 
-        # 计时初始化
+        # 计时和包序号初始化
         time = 0
+        seq = 0
 
         data_windows = []
 
@@ -61,7 +56,7 @@ class Gbn(object):
                 # 当超时后，将窗口内的数据更改为未发送状态
                 if time > MAX_TIME:
                     for data in data_windows:
-                        data.state = False
+                        data.state = 0
 
                 # 窗口中数据少于最大容量时，尝试添加新数据
                 while len(data_windows) < WINDOWS_LENGTH:
@@ -70,8 +65,9 @@ class Gbn(object):
                     if not line:
                         break
 
-                    data = Data(line)
+                    data = Data(line, seq=seq)
                     data_windows.append(data)
+                    seq += 1
 
                 # 窗口内无数据则退出总循环
                 if not data_windows:
@@ -81,8 +77,9 @@ class Gbn(object):
                 for data in data_windows:
                     if not data.state:
                         self.s.sendto(str(data), (HOST, port))
-                        data.state = True
+                        data.state = 1
 
+                # 无阻塞socket连接监控
                 readable, writeable, errors = select.select([self.s, ], [], [], 1)
 
                 if len(readable) > 0:
@@ -91,7 +88,7 @@ class Gbn(object):
                     time = 0
 
                     message, address = self.s.recvfrom(BUFFER_SIZE)
-                    print 'ACK ' + message
+                    sys.stdout.write('ACK ' + message + '\n')
 
                     for i in range(len(data_windows)):
                         if message == data_windows[i].seq:
@@ -132,7 +129,7 @@ class Gbn(object):
                     # 判断数据是否重复
                     if ack not in data_windows:
                         data_windows.append(ack)
-                        print message
+                        sys.stdout.write(message + '\n')
 
                     while len(data_windows) > WINDOWS_LENGTH:
                         data_windows.pop(0)
@@ -149,8 +146,9 @@ class Sr(object):
 
     def push_data(self, path, port):
 
-        # 计时初始化
+        # 计时和包序号初始化
         time = 0
+        seq = 0
 
         data_windows = []
 
@@ -158,10 +156,12 @@ class Sr(object):
 
             while True:
 
-                # 当超时后，将窗口内的数据更改为未发送状态
+                # 当超时后，将窗口内第一个发送成功未确认的数据状态更改为未发送
                 if time > MAX_TIME:
                     for data in data_windows:
-                        data.state = False
+                        if data.state == 1:
+                            data.state = 0
+                            break
 
                 # 窗口中数据少于最大容量时，尝试添加新数据
                 while len(data_windows) < WINDOWS_LENGTH:
@@ -170,8 +170,9 @@ class Sr(object):
                     if not line:
                         break
 
-                    data = Data(line)
+                    data = Data(line, seq=seq)
                     data_windows.append(data)
+                    seq += 1
 
                 # 窗口内无数据则退出总循环
                 if not data_windows:
@@ -181,7 +182,7 @@ class Sr(object):
                 for data in data_windows:
                     if not data.state:
                         self.s.sendto(str(data), (HOST, port))
-                        data.state = True
+                        data.state = 1
 
                 readable, writeable, errors = select.select([self.s, ], [], [], 1)
 
@@ -191,24 +192,31 @@ class Sr(object):
                     time = 0
 
                     message, address = self.s.recvfrom(BUFFER_SIZE)
-                    print 'ACK ' + message
+                    sys.stdout.write('ACK ' + message + '\n')
 
-                    for i in range(len(data_windows)):
-                        if message == data_windows[i].seq:
-                            data_windows = data_windows[i+1:]
+                    # 收到数据后更改该数据包状态为已接收
+                    for data in data_windows:
+                        if message == data.seq:
+                            data.state = 2
                             break
                 else:
                     # 未收到数据则计时器加一
                     time += 1
 
+                # 当窗口中首个数据已接收时，窗口前移
+                while data_windows[0].state == 2:
+                    data_windows.pop(0)
+
+                    if not data_windows:
+                        break
+
         self.s.close()
 
     def pull_data(self):
 
-        # 记录上一个回执的ack的值
-        last_ack = SEQ_LENGTH - 1
-
-        data_windows = []
+        # 窗口的初始序号
+        seq = 0
+        data_windows = {}
 
         while True:
 
@@ -217,26 +225,21 @@ class Sr(object):
             if len(readable) > 0:
                 message, address = self.s.recvfrom(BUFFER_SIZE)
 
-                ack = int(message.split()[0])
+                ack = message.split()[0]
 
-                # 连续接收数据则反馈当前ack
-                if last_ack == (ack - 1) % SEQ_LENGTH:
+                # 丢包率为0.2
+                if random() < 0.2:
+                    continue
 
-                    # 丢包率为0.2
-                    if random() < 0.2:
-                        continue
+                # 返回成功接收的包序号
+                self.s.sendto(ack, address)
+                data_windows[ack] = message.split()[1]
 
-                    self.s.sendto(str(ack), address)
-                    last_ack = ack
-
-                    # 判断数据是否重复
-                    if ack not in data_windows:
-                        data_windows.append(ack)
-                        print message
-
-                    while len(data_windows) > WINDOWS_LENGTH:
-                        data_windows.pop(0)
-                else:
-                    self.s.sendto(str(last_ack), address)
+                # 滑动窗口
+                while str(seq) in data_windows:
+                    sys.stdout.write(str(seq) + ' ' + data_windows[str(seq)] + '\n')
+                    data_windows.pop(str(seq))
+                    seq = (seq + 1) % SEQ_LENGTH
 
         self.s.close()
+
