@@ -21,5 +21,6 @@ if __name__ == '__main__':
 
     thread.start_new_thread(new_server_socket, (SERVER_PORT, CLIENT_PORT, 'data/server_push.txt', Sr))
 
+    # new_server_socket(SERVER_PORT, CLIENT_PORT, 'data/server_push.txt', Sr)
     client.new_client_socket(CLIENT_PORT_EXTRA, Gbn)
 

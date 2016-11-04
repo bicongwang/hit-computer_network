@@ -34,3 +34,22 @@
 **本项目在`gbn`文件夹下。**     
 其中`global_data.py`脚本为gbn协议和sr协议的基本实现。而`client.py`和`server.py`则为服务器和客户端的测试脚本。       
 基于20%的数据丢包率进行测试，采用双向传输，C->S和S->C分别使用GBN协议和SR协议进行测试。
+
+## 使用Wireshark分析网络协议
+
+### 基本功能
+
+- 使用Wireshark分析HTTP、TCP、IP协议
+- 使用Wireshark分析DNS、UDP、ARP协议
+
+### 项目说明
+
+在Ubuntu下可直接使用以下指令进行安装
+
+    sudo apt-get install wireshark
+    
+在运行`wireshark`时，一般用户没有抓包的权限。      
+官方推荐使用`wireshark`用户组的用户进行抓包，不建议使用`superuser`。    
+如果仅为实验，方便起见可以使用超级管理员权限。
+
+    sudo wireshark
