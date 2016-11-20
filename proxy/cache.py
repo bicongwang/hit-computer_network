@@ -10,6 +10,8 @@ class Cache(object):
         self.url = url
         self.name = url[:50].replace('/', '%')
 
+        self.__check_exist_cache_dir()
+
     def is_cache_exist(self):
         '''
         检测缓存是否存在
@@ -41,6 +43,12 @@ class Cache(object):
         with open('./cache/' + self.name, 'a') as f:
             f.write(data)
 
+    def __check_exist_cache_dir(self):
+        '''
+        创建缓存目录
+        '''
+        if not os.path.exists('./cache'):
+            os.mkdir('./cache')
 
 if __name__ == '__main__':
     pass

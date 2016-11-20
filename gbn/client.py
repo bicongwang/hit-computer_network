@@ -3,7 +3,7 @@ import socket
 import thread
 import server
 
-from global_data import *
+from util import *
 
 
 def new_client_socket(client_port, protocol):

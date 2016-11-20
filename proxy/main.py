@@ -7,10 +7,6 @@ from proxy import Proxy
 PORT = 5000
 THREAD = 5
 
-def check_exist_cache_dir():
-    # 创建缓存目录
-    if not os.path.exists('./cache'):
-        os.mkdir('./cache')
 
 if __name__ == '__main__':
 
@@ -22,8 +18,6 @@ if __name__ == '__main__':
     s.bind(('', PORT))
     # 控制队列中可等待的最大链接
     s.listen(THREAD)
-
-    check_exist_cache_dir()
 
     while 1:
         # print 'Create new thread.\n'
