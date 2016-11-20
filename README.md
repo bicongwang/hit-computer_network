@@ -38,7 +38,7 @@
 ### 项目说明
 
 **本项目在`gbn`文件夹下。**     
-其中`global_data.py`脚本为gbn协议和sr协议的基本实现。而`client.py`和`server.py`则为服务器和客户端的测试脚本。       
+其中`util.py`脚本为gbn协议和sr协议的基本实现。而`client.py`和`server.py`则为服务器和客户端的测试脚本。       
 基于20%的数据丢包率进行测试，采用双向传输，C->S和S->C分别使用GBN协议和SR协议进行测试。
 
 ## <a name="使用Wireshark分析网络协议"/>使用Wireshark分析网络协议
