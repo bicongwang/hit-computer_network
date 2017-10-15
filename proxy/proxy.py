@@ -56,7 +56,7 @@ class Proxy(object):
                 sys.exit(1)
             else:
                 # 对目标服务器建立socket连接
-                self.target_sock = socket.socket(addr_info[0], addr_info[1])
+                self.target_sock = socket.socket(addr_info[0], 1)
                 self.target_sock.connect(addr_info[4])
                 self.target_sock.send(self.request)
                 self.return_data()

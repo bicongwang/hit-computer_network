@@ -5,7 +5,7 @@ import thread
 from proxy import Proxy
 
 PORT = 5000
-THREAD = 5
+THREAD = 2
 
 
 if __name__ == '__main__':
